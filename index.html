@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Правка результатов — 5 вёрст</title>
+<style>
+  :root{
+    --accent:#5b7cfa; --red:#d93a3a; --amber:#c77d00; --bg:#f5f6fa;
+    --line:#dfe3ee; --muted:#8a90a5; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:#22263a}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0}
+  main{max-width:1100px;margin:0 auto;padding:12px 12px 60px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+  .btn{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;
+       font-size:14px;cursor:pointer;min-height:44px}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.danger{color:var(--red);border-color:var(--red)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:20px;
+        padding:6px 10px;font-size:13px;background:#fff;cursor:pointer}
+  .chip.base{border-color:var(--accent);background:#eef1ff;font-weight:600}
+  .chip .x{color:var(--red);font-weight:700;padding:0 4px;font-size:15px}
+  .chip small{color:var(--muted)}
+  .summary{position:sticky;top:0;z-index:5;background:#fff;border:1px solid var(--line);border-radius:10px;
+           padding:8px 12px;margin-bottom:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px;align-items:center}
+  .badge{padding:3px 10px;border-radius:12px;color:#fff;font-weight:600}
+  .b-dup{background:var(--red)} .b-close{background:var(--amber)} .b-gap{background:#8a5cf6}
+  .b-mm{background:#d95fa8} .b-miss{background:#4b9e4b}
+  .ok{color:#4b9e4b;font-weight:600}
+  table{border-collapse:collapse;width:100%;background:#fff;font-size:14px;font-variant-numeric:tabular-nums}
+  th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top}
+  th{background:#f0f2f8;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#555c78;position:sticky;top:0}
+  tr.del td{opacity:.45;text-decoration:line-through}
+  tr.flag-gap{outline:2px solid #8a5cf6}
+  .hm{color:var(--muted);font-size:11px}
+  .sec{font-size:20px;font-weight:700;letter-spacing:.02em}
+  td>div.t{white-space:nowrap}
+  .radio{transform:scale(1.25);margin-right:6px}
+  .cell-miss{background:#eaf6ea;color:#4b9e4b;font-weight:600}
+  .cell-mm{background:#fdeaf3}
+  .cell-dup{background:#fde8e8}
+  .cell-empty{background:#fafafa;color:#c3c7d6;text-align:center}
+  input.tin{border:1px solid transparent;background:transparent;font:inherit;padding:4px 6px;width:110px;
+            font-variant-numeric:tabular-nums;border-radius:6px}
+  input.tin:hover,input.tin:focus{border-color:var(--line);background:#fff}
+  .note{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:13px}
+  .acts{display:flex;gap:4px;flex-wrap:wrap}
+  .acts button{min-width:34px;min-height:34px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-size:14px}
+  .acts .del{color:var(--red)} .acts .ret{color:#4b9e4b;font-weight:700}
+  .flag-tag{font-size:10px;font-weight:700;color:#fff;padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle}
+  .ftag-dup{background:var(--red)} .ftag-close{background:var(--amber)} .ftag-gap{background:#8a5cf6} .ftag-mm{background:#d95fa8}
+  .hint{font-size:12px;color:var(--muted)}
+  footer{margin-top:18px;font-size:12px;color:var(--muted)}
+  /* мобильные карточки: одна таблица, CSS-трансформация */
+  @media (max-width:720px){
+    table,tbody,tr,td,th{display:block;width:100%}
+    thead{display:none}
+    tr{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:#fff;padding:6px}
+    td{border:none;border-bottom:1px dashed var(--line);padding:8px 6px}
+    td:last-child{border-bottom:none}
+    td::before{content:attr(data-label);display:block;font-size:11px;color:var(--muted);
+               text-transform:uppercase;margin-bottom:3px;font-weight:600}
+    td.n::before{content:none}
+    .sec{font-size:24px}
+    .summary{gap:8px}
+    .btn{width:100%}
+    .acts button{min-width:44px;min-height:44px;font-size:16px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Правка результатов · 5 вёрст</h1>
+  <span class="hint">файлы не покидают ваш компьютер</span>
+</header>
+<main>
+  <div class="panel">
+    <input type="file" id="inp" accept=".csv" multiple hidden>
+    <button class="btn primary" onclick="document.getElementById('inp').click()">Загрузить CSV (можно несколько)</button>
+    <button class="btn" onclick="loadDemo()">Демо-файл</button>
+    <div class="chips" id="chips"></div>
+    <div class="hint" style="margin-top:6px">Клик по чипу — назначить файл базовым (его шапка и строка STARTOFEVENT пойдут в экспорт).</div>
+  </div>
+
+  <div id="summary" class="summary" hidden></div>
+  <div id="tablebox"></div>
+
+  <div class="panel" id="exportbar" hidden>
+    <button class="btn primary" onclick="exportCSV()">Скачать исправленный CSV</button>
+    <span class="hint">формат сохраняется исходным: STARTOFEVENT, записи, ENDOFEVENT. Пометки и подсветки в файл не попадают.</span>
+  </div>
+
+  <footer>v4 · пороги проверок: близкий финиш 2 с, разрыв 90 с (константы CLOSE_S и GAP_S в начале скрипта)</footer>
+</main>
+
+<script>
+const CLOSE_S = 2, GAP_S = 90;
+const DEMO = `STARTOFEVENT,07/11/2026 09:25:08,virtual_volunteer_android_2.6.0_23124RA7EO
+1,07/11/2026 09:25:08,00:20:07
+2,07/11/2026 09:26:00,00:21:00
+3,07/11/2026 09:26:28,00:21:27
+4,07/11/2026 09:27:18,00:22:17
+5,07/11/2026 09:27:30,00:22:29
+6,07/11/2026 09:27:32,00:22:31
+7,07/11/2026 09:27:32,00:22:31
+8,07/11/2026 09:27:37,00:22:37
+9,07/11/2026 09:28:37,00:23:37
+10,07/11/2026 09:29:11,00:24:10
+11,07/11/2026 09:29:25,00:24:24
+12,07/11/2026 09:31:21,00:26:20
+13,07/11/2026 09:31:34,00:26:33
+14,07/11/2026 09:32:00,00:27:00
+15,07/11/2026 09:32:20,00:27:19
+16,07/11/2026 09:33:45,00:28:44
+17,07/11/2026 09:34:02,00:29:02
+18,07/11/2026 09:34:03,00:29:02
+19,07/11/2026 09:34:13,00:29:12
+20,07/11/2026 09:34:13,00:29:13
+21,07/11/2026 09:34:14,00:29:13
+22,07/11/2026 09:34:53,00:29:53
+23,07/11/2026 09:35:12,00:30:11
+24,07/11/2026 09:35:17,00:30:16
+25,07/11/2026 09:35:40,00:30:39
+26,07/11/2026 09:36:00,00:31:00
+27,07/11/2026 09:36:28,00:31:28
+28,07/11/2026 09:36:37,00:31:36
+29,07/11/2026 09:40:03,00:35:02
+30,07/11/2026 09:40:04,00:35:03
+31,07/11/2026 09:40:08,00:35:08
+ENDOFEVENT,07/11/2026 09:40:08`;
+
+let state = {files:[], baseId:null, slots:[], nextFileId:1};
+
+/* ---------- разбор ---------- */
+function parseCSV(text){
+  const res = {start:null, end:'', records:[]};
+  for(let line of text.split(/\r?\n/)){
+    line = line.trim(); if(!line) continue;
+    const p = line.split(',');
+    if(p[0]==='STARTOFEVENT') res.start = {date:p[1]||'', device:p[2]||''};
+    else if(p[0]==='ENDOFEVENT') res.end = p[1]||'';
+    else if(/^\d+$/.test(p[0].trim())){
+      res.records.push({time:(p[1]||'').trim(), elapsed:(p[2]||'').trim()});
+    }
+  }
+  return res;
+}
+function parseDT(s){
+  const m=/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/.exec((s||'').trim());
+  if(!m) return null;
+  const d=new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+m[6]);
+  return isNaN(d)?null:d;
+}
+function secOfHMSt(el){ const m=/^(\d{1,2}):(\d{2}):(\d{2})$/.exec(el||''); return m?(+m[1])*3600+(+m[2])*60+(+m[3]):null; }
+
+/* ---------- загрузка ---------- */
+function loadFile(name, text){
+  const p = parseCSV(text);
+  if(!p.records.length){ alert('В файле «'+name+'» не найдено записей.'); return; }
+  const dup = state.files.find(f => f.device===p.device && f.records[0] && p.records[0] && f.records[0].time===p.records[0].time);
+  if(dup){ alert('Этот файл уже загружен как «'+dup.name+'» (совпали секундомер и первая отсечка). Повторно не добавляю.'); return; }
+  const f = {id:state.nextFileId++, name, device:p.device, start:p.start, end:p.end, records:p.records};
+  state.files.push(f);
+  if(!state.baseId) state.baseId = f.id;
+  merge(); render();
+}
+document.getElementById('inp').addEventListener('change', e=>{
+  [...e.target.files].forEach(f=>{ const r=new FileReader(); r.onload=()=>loadFile(f.name, r.result); r.readAsText(f); });
+  e.target.value='';
+});
+function loadDemo(){ loadFile('stopwatch_20261107_0940.csv', DEMO); }
+
+function removeFile(id){
+  const f = state.files.find(x=>x.id===id);
+  if(!confirm('Удалить файл «'+f.name+'» из сверки?')) return;
+  state.files = state.files.filter(x=>x.id!==id);
+  if(state.baseId===id) state.baseId = state.files.length ? state.files[0].id : null;
+  merge(); render();
+}
+function setBase(id){ state.baseId=id; merge(); render(); }
+
+/* ---------- сведение ---------- */
+function merge(){
+  const maxLen = state.files.reduce((m,f)=>Math.max(m,f.records.length),0);
+  const old = state.slots; state.slots=[];
+  for(let i=0;i<maxLen;i++){
+    const s = old[i] || {entries:{}, note:'', chosen:null, override:null, deleted:false};
+    const keep = {};
+    for(const f of state.files) if(f.records[i]) keep[f.id]={time:f.records[i].time, elapsed:f.records[i].elapsed};
+    s.entries = keep;
+    if(s.chosen!=null && !s.entries[s.chosen]) s.chosen=null;
+    if(s.chosen==null && s.entries[state.baseId]) s.chosen=state.baseId;
+    if(s.chosen==null){ const k=Object.keys(s.entries)[0]; if(k!=null) s.chosen=+k; }
+    state.slots.push(s);
+  }
+}
+
+/* ---------- итоговое время и проверки ---------- */
+function finalElapsed(s){
+  if(s.override) return s.override;
+  const e=s.entries[s.chosen]||Object.values(s.entries)[0];
+  return e?e.elapsed:'';
+}
+function computeFlags(){
+  let n=0, res=[];
+  for(let i=0;i<state.slots.length;i++){
+    const s=state.slots[i], fl={};
+    const vals=Object.values(s.entries).map(e=>e.elapsed);
+    if(vals.length>1){
+      const base=secOfHMSt(vals[0]);
+      fl.mm = vals.some(v=>{const c=secOfHMSt(v); return base!=null&&c!=null&&Math.abs(c-base)>1;});
+    }
+    const have=Object.keys(s.entries).length;
+    if(state.files.length>1 && have>0 && have<state.files.length) fl.miss=true;
+    if(s.deleted){ res.push(fl); continue; }
+    const cur=secOfHMSt(finalElapsed(s)), prev=res.length?secOfHMSt(finalElapsed(state.slots[res.length])):null;
+    if(cur!=null){
+      if(prev!=null){
+        if(cur===prev) fl.dup=true;
+        else if(cur-prev<CLOSE_S) fl.close=true;
+        if(cur-prev>GAP_S) fl.gap=true;
+      }
+    }
+    res.push(fl);
+    n += (fl.dup?1:0)+(fl.close?1:0)+(fl.gap?1:0)+(fl.mm?1:0)+(fl.miss?1:0);
+  }
+  return {flags:res, total:n};
+}
+
+/* ---------- отрисовка: один путь для ПК и телефона ---------- */
+function fmtT(el){
+  const m=/^(\d{1,2}):(\d{2}):(\d{2})$/.exec(el||'');
+  return m?'<span class="hm">'+m[1]+':'+m[2]+':</span><span class="sec">'+m[3]+'</span>':'<span class="hm">?</span>';
+}
+function render(){
+  const chips=document.getElementById('chips');
+  chips.innerHTML = state.files.map(f=>
+    '<span class="chip'+(f.id===state.baseId?' base':'')+'" onclick="setBase('+f.id+')" title="Назначить базовым">'+
+    (f.id===state.baseId?'★ ':'')+f.name+' <small>'+f.records.length+' зап.</small>'+
+    '<span class="x" onclick="event.stopPropagation();removeFile('+f.id+')">✕</span></span>').join('');
+
+  const box=document.getElementById('tablebox'), sbar=document.getElementById('summary'), ebar=document.getElementById('exportbar');
+  if(!state.files.length){
+    box.innerHTML='<div class="panel hint">Загрузите CSV-файлы от секундомеров — записи сведутся по порядковому номеру. Кнопка «Демо-файл» подставит пример.</div>';
+    sbar.hidden=true; ebar.hidden=true; return;
+  }
+  const {flags,total}=computeFlags();
+  sbar.hidden=false; ebar.hidden=false;
+  sbar.innerHTML = total
+    ? '<b>Проблемы:</b>'+
+      (flags.some(f=>f.dup)?'<span class="badge b-dup">дубли: '+flags.filter(f=>f.dup).length+'</span>':'')+
+      (flags.some(f=>f.close)?'<span class="badge b-close">финиш вплотную: '+flags.filter(f=>f.close).length+'</span>':'')+
+      (flags.some(f=>f.gap)?'<span class="badge b-gap">разрыв >90 с: '+flags.filter(f=>f.gap).length+'</span>':'')+
+      (flags.some(f=>f.mm)?'<span class="badge b-mm">расхождение секундомеров: '+flags.filter(f=>f.mm).length+'</span>':'')+
+      (flags.some(f=>f.miss)?'<span class="badge b-miss">нет отсечки: '+flags.filter(f=>f.miss).length+'</span>':'')
+    : '<span class="ok">Явных проблем не найдено — проверьте глазами «финиш вплотную».</span>';
+
+  let h='<div class="panel" style="padding:0;overflow-x:auto"><table><thead><tr>'+
+        '<th>№</th><th>Пометка</th>'+
+        state.files.map(f=>'<th>'+f.name+(f.id===state.baseId?'<br>★ базовый':'')+'</th>').join('')+
+        '<th>Итоговое время</th><th>Действия</th></tr></thead><tbody>';
+  state.slots.forEach((s,i)=>{
+    const fl=flags[i]||{};
+    const tags=[fl.dup?'<span class="flag-tag ftag-dup">дубль</span>':'',
+                fl.close?'<span class="flag-tag ftag-close">вплотную</span>':'',
+                fl.gap?'<span class="flag-tag ftag-gap">разрыв</span>':'',
+                fl.mm?'<span class="flag-tag ftag-mm">расхождение</span>':''].join('');
+    h+='<tr'+(s.deleted?' class="del"':'')+(fl.gap?' data-flag="gap"':'')+'>';
+    h+='<td class="n">'+(i+1)+'</td>';
+    h+='<td data-label="Пометка (не в файл)"><input class="note" value="'+(s.note||'').replace(/"/g,'&quot;')+
+       '" oninput="state.slots['+i+'].note=this.value" placeholder="не попадёт в файл"></td>';
+    state.files.forEach(f=>{
+      const e=s.entries[f.id];
+      if(!e){ h+='<td data-label="'+f.name+'" class="'+(Object.keys(s.entries).length?'cell-miss':'cell-empty')+'">'+
+              (Object.keys(s.entries).length?'нет отсечки':'—')+'</td>'; return; }
+      const cls='t'+(fl.mm?' cell-mm':'');
+      h+='<td data-label="'+f.name+'"><div class="'+cls+'"><label><input type="radio" class="radio" name="ch'+i+'"'+
+         (s.chosen===f.id?' checked':'')+' onchange="state.slots['+i+'].chosen='+f.id+';render()">'+
+         fmtT(e.elapsed)+'</label></div></td>';
+    });
+    h+='<td data-label="Итоговое время"><input class="tin'+(s.override?'':' hm')+'" value="'+finalElapsed(s)+
+       '" onchange="setOverride('+i+',this.value)"></td>';
+    h+='<td data-label="Действия"><div class="acts">'+
+       '<button onclick="move('+i+',-1)" title="Выше">↑</button>'+
+       '<button onclick="move('+i+',1)" title="Ниже">↓</button>'+
+       '<button onclick="insertSlot('+i+')" title="Вставить пустой слот">+</button>'+
+       (s.deleted?'<button class="ret" onclick="state.slots['+i+'].deleted=false;render()" title="Вернуть">↺</button>'
+                 :'<button class="del" onclick="state.slots['+i+'].deleted=true;render()" title="Удалить">✕</button>')+
+       '</div>'+tags+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  box.innerHTML=h;
+}
+function setOverride(i,v){
+  v=v.trim();
+  state.slots[i].override = /^(\d{1,2}):(\d{2}):(\d{2})$/.test(v)?v:null;
+  render();
+}
+function move(i,d){
+  const j=i+d; if(j<0||j>=state.slots.length) return;
+  [state.slots[i],state.slots[j]]=[state.slots[j],state.slots[i]];
+  render();
+}
+function insertSlot(i){
+  state.slots.splice(i+1,0,{entries:{},note:'',chosen:null,override:null,deleted:false});
+  merge(); render();
+}
+
+/* ---------- экспорт ---------- */
+function exportCSV(){
+  const base = state.files.find(f=>f.id===state.baseId)||state.files[0];
+  let out='STARTOFEVENT,'+base.start.date+','+base.start.device+'\n', n=1;
+  for(const s of state.slots){
+    if(s.deleted) continue;
+    const e=s.entries[s.chosen]||Object.values(s.entries)[0];
+    if(!e) continue;
+    out+=n+','+e.time+','+(finalElapsed(s)||e.elapsed)+'\n'; n++;
+  }
+  out+='ENDOFEVENT,'+base.end;
+  const blob=new Blob([out],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=base.name.replace(/\.csv$/i,'')+'_fixed.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+render();
+</script>
+</body>
+</html>
